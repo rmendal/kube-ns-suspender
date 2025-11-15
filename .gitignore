@@ -7,3 +7,5 @@ out/
 tools/bin/
 tmp/
 .idea/
+
+.DS_Store
