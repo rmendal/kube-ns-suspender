@@ -1,4 +1,4 @@
-FROM devopsworks/golang-upx:1.18 AS builder
+FROM golang:1.24-alpine AS builder
 
 ENV GO111MODULE=on \
     CGO_ENABLED=0 \
@@ -17,11 +17,9 @@ RUN go mod download
 COPY . .
 
 RUN go build \
-        -ldflags="-X 'main.Version=${VERSION}' -X 'main.BuildDate=${BUILD_DATE}'" \
+        -ldflags="-s -w -X 'main.Version=${VERSION}' -X 'main.BuildDate=${BUILD_DATE}'" \
         -o kube-ns-suspender \
-        . \
-    && strip kube-ns-suspender \
-    && /usr/local/bin/upx -9 kube-ns-suspender
+        .
 
 
 FROM gcr.io/distroless/base-debian10

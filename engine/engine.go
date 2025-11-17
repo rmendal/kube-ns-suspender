@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/govirtuo/kube-ns-suspender/metrics"
+	"github.com/adnilim/kube-ns-suspender/metrics"
 	"github.com/rs/zerolog"
 	v1 "k8s.io/api/core/v1"
 )

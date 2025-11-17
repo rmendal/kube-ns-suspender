@@ -7,10 +7,10 @@ import (
 
 	"github.com/namsral/flag"
 
-	"github.com/govirtuo/kube-ns-suspender/engine"
-	"github.com/govirtuo/kube-ns-suspender/metrics"
-	"github.com/govirtuo/kube-ns-suspender/pprof"
-	"github.com/govirtuo/kube-ns-suspender/webui"
+	"github.com/adnilim/kube-ns-suspender/engine"
+	"github.com/adnilim/kube-ns-suspender/metrics"
+	"github.com/adnilim/kube-ns-suspender/pprof"
+	"github.com/adnilim/kube-ns-suspender/webui"
 	"github.com/kedacore/keda/v2/pkg/generated/clientset/versioned/typed/keda/v1alpha1"
 	"github.com/rs/zerolog/log"
 	"k8s.io/client-go/kubernetes"

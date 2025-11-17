@@ -38,7 +38,7 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
       - name: nginx
-        image: registry.k8s.io/nginx-slim:0.8
+        image: nginx:1.27-alpine
         ports:
         - containerPort: 80
           name: web
@@ -66,28 +66,6 @@ spec:
         image: nginx:latest
         ports:
         - containerPort: 80
----
-apiVersion: batch/v1beta1
-kind: CronJob
-metadata:
-  name: hello-v1beta
-  namespace: kube-ns-suspender-testing-namespace
-spec:
-  suspend: false
-  schedule: "*/3 * * * *"
-  jobTemplate:
-    spec:
-      template:
-        spec:
-          containers:
-          - name: hello-v1beta
-            image: busybox
-            imagePullPolicy: IfNotPresent
-            command:
-            - /bin/sh
-            - -c
-            - date; echo Hello from the Kubernetes cluster; sleep 120
-          restartPolicy: OnFailure
 ---
 apiVersion: batch/v1
 kind: CronJob

@@ -27,7 +27,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ghcr.io/adnilim/kube-ns-suspender
 
 jobs:
   changes:
@@ -68,9 +68,11 @@ jobs:
           gh api "/repos/{owner}/{repo}/statuses/${{ github.event.pull_request.head.sha }}" \
             -f context="E2E k8s testing / build-image" \
             -f state="success"
-          gh api "/repos/{owner}/{repo}/statuses/${{ github.event.pull_request.head.sha }}" \
-            -f context="E2E k8s testing / test-e2e" \
-            -f state="success"
+          for version in 1.31.4 1.32.2 1.33.0 1.34.0; do
+            gh api "/repos/{owner}/{repo}/statuses/${{ github.event.pull_request.head.sha }}" \
+              -f context="E2E k8s testing / test-e2e (k8s ${version})" \
+              -f state="success"
+          done
 
   build-image:
     needs: changes
@@ -90,7 +92,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.IMAGE_NAME }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -101,7 +103,7 @@ jobs:
           context: .
           push: false
           load: false
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          tags: ${{ env.IMAGE_NAME }}:latest
           outputs: type=docker,dest=/tmp/kube-ns-suspender_oci.tar
           build-args: |
             VERSION=${{ steps.meta.outputs.tags }}
@@ -120,6 +122,11 @@ jobs:
       - build-image
     if: needs.changes.outputs.run == 'true'
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        k8s-version: ['1.31.4', '1.32.2', '1.33.0', '1.34.0']
+      fail-fast: false
+    name: test-e2e (k8s ${{ matrix.k8s-version }})
     steps:
       # Needed to get config and tests
       - name: Checkout repository
@@ -141,14 +148,16 @@ jobs:
           docker load --input /tmp/kube-ns-suspender_oci.tar
           docker image ls -a
 
-      - uses: engineerd/setup-kind@v0.5.0
-        with :
-          version: "v0.11.1"
-          config: "./tests/config/kind-config.yaml"
+      - name: Setup KinD
+        uses: helm/kind-action@v1
+        with:
+          version: "v0.24.0"
+          node_image: kindest/node:v${{ matrix.k8s-version }}
+          cluster_name: kns-test
 
       - name: Load image into kind
         run: |
-          kind load docker-image ghcr.io/govirtuo/kube-ns-suspender:latest
+          kind load docker-image ghcr.io/adnilim/kube-ns-suspender:latest
 
       - name: Setup Testing
         run: ./tests/scripts/setup.sh
@@ -171,7 +180,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v3
         with:
-          name: tests-logs
+          name: tests-logs-k8s-${{ matrix.k8s-version }}
           path: tmp/
           retention-days: 5
 
@@ -192,10 +201,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Log in to the Container registry
-        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
@@ -217,7 +226,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.IMAGE_NAME }}
 
       - name: Get current date
         id: date

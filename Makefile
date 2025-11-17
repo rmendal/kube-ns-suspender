@@ -3,11 +3,11 @@ GOTEST=$(GOCMD) test
 GOVET=$(GOCMD) vet
 BINARY_NAME=kube-ns-suspender
 VERSION=$(shell git describe --tags)
-DOCKER_REGISTRY?=ghcr.io/govirtuo
+DOCKER_REGISTRY?=ghcr.io/adnilim
 BUILD_DATE=$(shell date +'%Y-%m-%d_%H:%M:%ST%Z')
 
 # Tooling and testing
-KIND_VERSION:=v0.11.1
+KIND_VERSION:=v0.24.0
 
 GREEN  := $(shell tput -Txterm setaf 2)
 YELLOW := $(shell tput -Txterm setaf 3)
@@ -58,13 +58,16 @@ e2e: docker-build docker-build-tools e2e_cleanup ## Run End2End tests on a kuber
 	@echo '${GREEN}---> Loading local image into Kind cluster${RESET}'
 	kind load docker-image ${DOCKER_REGISTRY}/${BINARY_NAME}:latest --name=kns-test
 
+	@echo '${GREEN}---> Copy kubeconfig to tmp directory${RESET}'
+	cp ${KUBE_CONFIG} ${PWD}/tmp/kubeconfig
+
 	@echo '${GREEN}---> Run tests${RESET}'
-	docker run --rm -it \
+	docker run --rm -i \
 		--network=host \
-		--volume "${KUBE_CONFIG}:/root/.kube/config" \
 		--volume "${PWD}/tmp/detik/:/tmp/detik/" \
 		--volume "${PWD}:/code" \
 		--workdir /code \
+		--env KUBECONFIG=/code/tmp/kubeconfig \
 		local/$(BINARY_NAME)-bats /code/tests/
 
 	@echo '${GREEN}---> Export Kind logs${RESET}'
@@ -101,7 +104,8 @@ docker-build-tools: ## Use the Dockerfile to build the tools container
 kind-dl: ## Donwload Kind (Kubernetes-in-Docker) for local testing
 	$(eval OS := "$(shell uname -s | tr [:upper:] [:lower:])")
 	@echo '${GREEN}Downloading Kind ${KIND_VERSION}:${RESET}'
-	curl --progress -Lo tools/bin/kind https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-${OS}-amd64
+	@mkdir -p tools/bin
+	curl -Lo tools/bin/kind https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-${OS}-amd64
 	chmod +x tools/bin/kind
 	@echo '${YELLOW}Run this command before running e2e tests:${RESET}'
 	@echo 'export PATH="$${PWD}/tools/bin:$${PATH}"'

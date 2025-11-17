@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/govirtuo/kube-ns-suspender/handlers"
+	"github.com/adnilim/kube-ns-suspender/handlers"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

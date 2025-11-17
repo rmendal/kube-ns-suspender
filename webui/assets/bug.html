@@ -11,7 +11,7 @@
   <div class="container mt-5">
     <p>You can help us improving this software by reporting it using:</p>
     <ul>
-        <li><a href="https://github.com/govirtuo/kube-ns-suspender/issues/new?assignees=eze-kiel&labels=bug%2Cui%2Ctriage&template=bug_report.yaml&title=%5BBug%5D%3A+" target="_blank"><i class="fa fa-fw fa-github"></i> GitHub issues</a></li>
+        <li><a href="https://github.com/adnilim/kube-ns-suspender/issues/new" target="_blank"><i class="fa fa-fw fa-github"></i> GitHub issues</a></li>
         {{if ne .SlackChannelName ""}}
           {{if ne .SlackChannelLink ""}}
             <li><a href="{{.SlackChannelLink}}"><i class="fa fa-fw fa-slack"></i> {{.SlackChannelName}}</a></li>
@@ -30,7 +30,7 @@
 <div class="footer">
   <div class="container">
     <p style="text-align: center;">
-        Developed by <a href="https://www.govirtuo.com">Virtuo Technologies</a>, delivered under MIT license. Version: '{{.Version}}' (built: {{.BuildDate}}).
+        Community-maintained fork of the <a href="https://github.com/govirtuo/kube-ns-suspender">original project</a> by Virtuo Technologies, delivered under MIT license. Version: '{{.Version}}' (built: {{.BuildDate}}).
     </p>
   </div>
 </div>

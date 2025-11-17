@@ -18,7 +18,7 @@ spec:
       serviceAccountName: kube-ns-suspender
       containers:
       - name: kube-ns-suspender
-        image: ghcr.io/govirtuo/kube-ns-suspender
+        image: ghcr.io/adnilim/kube-ns-suspender
         imagePullPolicy: IfNotPresent
         ports:
         - name: webui
