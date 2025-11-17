@@ -235,7 +235,6 @@ jobs:
         id: version
         run: |
           REF="${{ github.ref }}"
-          TAGS="${{ env.IMAGE_NAME }}:latest"
 
           if [[ "$REF" == refs/tags/* ]]; then
             # Remove 'refs/tags/' prefix
@@ -246,29 +245,37 @@ jobs:
             echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
             echo "Extracted version: ${VERSION}"
 
-            # Generate semantic version tags: X.Y.Z, X.Y, X, latest
-            TAGS="${{ env.IMAGE_NAME }}:${VERSION}"
-            TAGS="${TAGS},${{ env.IMAGE_NAME }}:latest"
+            # Generate newline-separated tags for docker/build-push-action
+            # Format: each tag on its own line
+            TAGS="${{ env.IMAGE_NAME }}:${VERSION}
+          ${{ env.IMAGE_NAME }}:latest"
 
             # Parse version and add X.Y and X tags
             if [[ $VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
               MAJOR="${BASH_REMATCH[1]}"
               MINOR="${BASH_REMATCH[2]}"
-              TAGS="${TAGS},${{ env.IMAGE_NAME }}:${MAJOR}.${MINOR}"
-              TAGS="${TAGS},${{ env.IMAGE_NAME }}:${MAJOR}"
+              TAGS="${TAGS}
+          ${{ env.IMAGE_NAME }}:${MAJOR}.${MINOR}
+          ${{ env.IMAGE_NAME }}:${MAJOR}"
               echo "Semantic version tags: ${MAJOR}, ${MAJOR}.${MINOR}, ${VERSION}"
             fi
           else
             echo "VERSION=latest" >> $GITHUB_OUTPUT
+            TAGS="${{ env.IMAGE_NAME }}:latest"
           fi
 
-          echo "TAGS=${TAGS}" >> $GITHUB_OUTPUT
-          echo "Final tags: ${TAGS}"
+          # Use heredoc to preserve newlines in output
+          echo "TAGS<<EOF" >> $GITHUB_OUTPUT
+          echo "$TAGS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "Final tags:"
+          echo "$TAGS"
 
       - name: Debug - Show tags to be pushed
         run: |
           echo "Tags that will be pushed:"
-          echo "${{ steps.version.outputs.TAGS }}" | tr ',' '\n'
+          echo "${{ steps.version.outputs.TAGS }}"
 
       - name: Build and push multi-architecture image
         uses: docker/build-push-action@v5

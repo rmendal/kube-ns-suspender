@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.5] - 2025-11-17
+
+### Fixed
+
+- **Critical**: Container tags now use **newline-separated format** instead of comma-separated
+  - `docker/build-push-action` requires tags to be newline-separated (one per line)
+  - Previous comma-separated format was being ignored, causing only first tag to be used
+- Use heredoc (EOF) to properly preserve newlines in GitHub Actions outputs
+- Tags now correctly generated: `3.0.5`, `3.0`, `3`, `latest` (all without 'v' prefix)
+
+### Technical Details
+
+The root cause was tag format:
+- ❌ Wrong: `tag1,tag2,tag3` (comma-separated)
+- ✅ Correct: Multi-line format (newline-separated)
+
 ## [3.0.4] - 2025-11-17
 
 ### Fixed
