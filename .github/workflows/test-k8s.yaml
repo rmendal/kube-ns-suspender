@@ -234,30 +234,41 @@ jobs:
       - name: Extract version and generate tags
         id: version
         run: |
-          TAGS="${IMAGE_NAME}:latest"
+          REF="${{ github.ref }}"
+          TAGS="${{ env.IMAGE_NAME }}:latest"
 
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            # Remove 'refs/tags/' prefix and 'v' prefix from version
-            VERSION="${GITHUB_REF#refs/tags/}"
+          if [[ "$REF" == refs/tags/* ]]; then
+            # Remove 'refs/tags/' prefix
+            VERSION="${REF#refs/tags/}"
+            # Remove 'v' prefix if present
             VERSION="${VERSION#v}"
+
             echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+            echo "Extracted version: ${VERSION}"
 
-            # Generate semantic version tags: X.Y.Z, X.Y, X
-            TAGS="${IMAGE_NAME}:${VERSION},${IMAGE_NAME}:latest"
+            # Generate semantic version tags: X.Y.Z, X.Y, X, latest
+            TAGS="${{ env.IMAGE_NAME }}:${VERSION}"
+            TAGS="${TAGS},${{ env.IMAGE_NAME }}:latest"
 
-            # Add X.Y tag if version has patch (e.g., 3.0.2 -> add 3.0)
+            # Parse version and add X.Y and X tags
             if [[ $VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
               MAJOR="${BASH_REMATCH[1]}"
               MINOR="${BASH_REMATCH[2]}"
-              TAGS="${TAGS},${IMAGE_NAME}:${MAJOR}.${MINOR}"
-              TAGS="${TAGS},${IMAGE_NAME}:${MAJOR}"
+              TAGS="${TAGS},${{ env.IMAGE_NAME }}:${MAJOR}.${MINOR}"
+              TAGS="${TAGS},${{ env.IMAGE_NAME }}:${MAJOR}"
+              echo "Semantic version tags: ${MAJOR}, ${MAJOR}.${MINOR}, ${VERSION}"
             fi
           else
             echo "VERSION=latest" >> $GITHUB_OUTPUT
           fi
 
           echo "TAGS=${TAGS}" >> $GITHUB_OUTPUT
-          echo "Generated tags: ${TAGS}"
+          echo "Final tags: ${TAGS}"
+
+      - name: Debug - Show tags to be pushed
+        run: |
+          echo "Tags that will be pushed:"
+          echo "${{ steps.version.outputs.TAGS }}" | tr ',' '\n'
 
       - name: Build and push multi-architecture image
         uses: docker/build-push-action@v5
