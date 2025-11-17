@@ -264,7 +264,7 @@ The controller at each PR and push using [bats-detik](https://github.com/bats-co
 
 ## Contributing
 
-/* add CONTRIBUTING file at root */
+See the [CONTRIBUTING](https://github.com/Adnilim/kube-ns-suspender/blob/main/CONTRIBUTING.md) file
 
 ## License
 
