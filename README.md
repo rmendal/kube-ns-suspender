@@ -1,9 +1,17 @@
-> [!WARNING]
-> This project is **no longer maintained** and is not up-to-date with new Kubernetes versions.
-
 # kube-ns-suspender
 
-[![E2E k8S tests](https://github.com/govirtuo/kube-ns-suspender/actions/workflows/test-k8s.yaml/badge.svg?branch=main)](https://github.com/govirtuo/kube-ns-suspender/actions/workflows/test-k8s.yaml)
+> [!NOTE]
+> **Version 3.0 Major Update**: This project has been updated to support Kubernetes 1.31-1.34.
+> **Breaking Change**: Support for Kubernetes versions < 1.31 has been removed.
+> If you're running on Kubernetes 1.24 or older, please see [MIGRATION.md](MIGRATION.md) for upgrade guidance.
+
+> [!TIP]
+> This is a community-maintained fork of the original [govirtuo/kube-ns-suspender](https://github.com/govirtuo/kube-ns-suspender) project, which was archived in 2024 at version v2.6.0.
+
+> [!IMPORTANT]
+> **GitHub Container Registry**: Starting with v3.0.0, images are published to GitHub Container Registry at `ghcr.io/adnilim/kube-ns-suspender`.
+
+[![E2E k8S tests](https://github.com/adnilim/kube-ns-suspender/actions/workflows/test-k8s.yaml/badge.svg?branch=main)](https://github.com/adnilim/kube-ns-suspender/actions/workflows/test-k8s.yaml)
 
 <img align="center" src="./docs/images/kube-ns-suspender.png" width="335" height="228"/>
 
@@ -11,8 +19,27 @@ Kubernetes controller managing namespaces life cycle.
 
 - [kube-ns-suspender](#kube-ns-suspender)
   - [Goal](#goal)
+  - [Compatibility](#compatibility)
   - [Installation](#installation)
   - [Usage](#usage)
+    - [Internals](#internals)
+      - [The watcher](#the-watcher)
+      - [The suspender](#the-suspender)
+    - [Flags](#flags)
+    - [Resources](#resources)
+    - [States](#states)
+    - [Annotations](#annotations)
+      - [On namespaces](#on-namespaces)
+        - [**controllerName**](#controllername)
+        - [**dailySuspendTime**](#dailysuspendtime)
+        - [**desiredState**](#desiredstate)
+        - [**nextSuspendTime**](#nextsuspendtime)
+      - [On resources](#on-resources)
+        - [Deployments and Stateful Sets](#deployments-and-stateful-sets)
+        - [Cronjobs](#cronjobs)
+        - [ScaledObjects](#scaledobjects)
+    - [Metrics](#metrics)
+    - [Profiling](#profiling)
   - [WebUI screenshots](#webui-screenshots)
   - [Development flow](#development-flow)
   - [Testing](#testing)
@@ -24,7 +51,21 @@ Kubernetes controller managing namespaces life cycle.
 This controller watches the cluster's namespaces and "suspends" them by scaling to 0 some of the resources within those namespaces at a given time.
 However, once a namespace is in a "suspended" state, it will not be restarted automatically the following day (or whatever). This allows to "reactivate" namespaces only when required, and reduce costs.
 
+## Compatibility
+
+| kube-ns-suspender Version | Kubernetes Versions | KEDA Versions | Go Version |
+|--------------------------|---------------------|---------------|------------|
+| v3.x                     | 1.31 - 1.34         | 2.18+         | 1.24+      |
+| v2.x (archived)          | 1.21 - 1.24         | 2.8.x         | 1.18       |
+
+**Supported Kubernetes Versions**: 1.31, 1.32, 1.33, 1.34 (AWS EKS supported versions)
+
+**Note**: This project follows AWS EKS Kubernetes version support. As AWS drops support for older versions, this project will update accordingly.
+
 ## Installation
+
+> **Version Requirements**: kube-ns-suspender v3.0+ requires Kubernetes 1.31 or newer.
+> If you're on Kubernetes 1.24 or older, see [MIGRATION.md](MIGRATION.md) for upgrade guidance.
 
 To deploy `kube-ns-suspender`, run the following commands:
 
@@ -44,7 +85,7 @@ A namespace `kube-ns-suspender` will be created and the manifests will be deploy
 
 ### Internals
 
-This controller can be splitted into 2 parts:
+This controller can be split into 2 parts:
 
 * The watcher
 * The suspender
@@ -114,7 +155,7 @@ To be automatically suspended at a given time, a namespace must have the annotat
 Valid values are any values that match the [`time.Kitchen`](https://pkg.go.dev/time#pkg-constants) time format, for example: `8:15PM`, `12:45AM`...
 
 ##### **desiredState**
- 
+
 If you want to unsuspend a namespace, you have to edit the annotation of the namespace:
 
 `kube-ns-suspender/desiredState: Suspended` -> `kube-ns-suspender/desiredState: Running`.
@@ -132,7 +173,7 @@ This annotation contains the date at which the namespace will be automatically s
 
 #### On resources
 
-Annotations are employed to save the original state of a resource. 
+Annotations are employed to save the original state of a resource.
 
 ##### Deployments and Stateful Sets
 
@@ -153,7 +194,7 @@ Cronjobs have a `spec.suspend` value that indicates if they must be runned or no
 
 ### Profiling
 
-`kube-ns-suspender` can start a pprof server for profiling, using the flag `--pprof`. 
+`kube-ns-suspender` can start a pprof server for profiling, using the flag `--pprof`.
 
 ## WebUI screenshots
 
@@ -199,7 +240,7 @@ devspace dev
 ```
 
 > [!WARNING]
-> 
+>
 > `devspace` and `kubectl` will deploy the manifests in the cluster set by the current context. Be sure to **not** deploy in the wrong cluster.
 >
 
