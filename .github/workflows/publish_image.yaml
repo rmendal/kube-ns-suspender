@@ -56,14 +56,26 @@ jobs:
           TAGS="${{ env.IMAGE_NAME }}:${VERSION}
           ${{ env.IMAGE_NAME }}:latest"
 
-          # Parse version and add X.Y and X tags if it's semver
-          if [[ $VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+          # Parse version and add X.Y and X tags if it's semver (with optional pre-release/metadata)
+          # Matches: 3.0.6, 3.0.6-rc1, 3.0.6-alpha.1, 3.0.6+build123, etc.
+          if [[ $VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
             MAJOR="${BASH_REMATCH[1]}"
             MINOR="${BASH_REMATCH[2]}"
-            TAGS="${TAGS}
+            PATCH="${BASH_REMATCH[3]}"
+
+            # For pre-release versions (e.g., 3.0.6-rc1), don't update major/minor tags
+            # Only update major/minor tags for stable releases
+            if [[ ! $VERSION =~ - ]]; then
+              # Stable release: add X.Y and X tags
+              TAGS="${TAGS}
           ${{ env.IMAGE_NAME }}:${MAJOR}.${MINOR}
           ${{ env.IMAGE_NAME }}:${MAJOR}"
-            echo "Semantic version tags: ${MAJOR}, ${MAJOR}.${MINOR}, ${VERSION}"
+              echo "Stable release - adding semantic version tags: ${MAJOR}, ${MAJOR}.${MINOR}"
+            else
+              echo "Pre-release version - skipping major/minor tags to avoid breaking stable versions"
+            fi
+
+            echo "Version breakdown: major=${MAJOR}, minor=${MINOR}, patch=${PATCH}, full=${VERSION}"
           fi
 
           # Use heredoc to preserve newlines in output
